@@ -73,8 +73,17 @@ def plot_matrix(wls, mat, title, levels, norm, cbar_lbl):
     ax.set_xlabel("发射波长 / nm"); ax.set_ylabel("发射波长 / nm"); ax.set_title(title)
     fig.colorbar(cf, ticks=np.unique(levels), label=cbar_lbl)
     fig.tight_layout()
+
+    # —— 调试：也保存一份到容器文件系统，便于在日志里确认非空
+    try:
+        fig.savefig(f"debug_{'sync' if '同步' in title else 'async'}.png", dpi=300)
+        print("DEBUG: saved debug PNG for", title, flush=True)
+    except Exception as e:
+        print("DEBUG: failed to save debug PNG:", e, flush=True)
+
     buf = io.BytesIO(); fig.savefig(buf, format="png", dpi=300); plt.close(fig)
     return buf.getvalue()
+
 
 @app.get("/healthz")
 def ok(): return {"ok": True}
@@ -88,9 +97,17 @@ async def analyze(
 ):
     try:
         data = await file.read()
-        wls, sync, async_, levels, norm, cbar_lbl, tags = process_file_bytes(data, header_row, use_std, sigma)
+        wls, sync, async_, levels, norm, cbar_lbl, tags = process_file_bytes(
+            data, header_row, use_std, sigma
+        )
         sync_png = plot_matrix(wls, sync, "同步二维相关光谱", levels, norm, cbar_lbl)
         async_png = plot_matrix(wls, async_, "异步二维相关光谱", levels, norm, cbar_lbl)
+
+        # 👉 就在这里加打印，调试输出前 60 个 base64 字符
+        import base64
+        print("DEBUG: sync_png head =", base64.b64encode(sync_png)[:60], flush=True)
+        print("DEBUG: async_png head =", base64.b64encode(async_png)[:60], flush=True)
+
         return JSONResponse({
             "tags": tags,
             "sync_png": base64.b64encode(sync_png).decode(),
@@ -98,3 +115,4 @@ async def analyze(
         })
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=400)
+

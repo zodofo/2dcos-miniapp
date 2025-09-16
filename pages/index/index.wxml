@@ -31,7 +31,9 @@
 <!-- 分析结果展示 -->
 <view wx:if="{{syncPath}}" class="section">
   <text>同步二维相关光谱</text>
-  <image src="{{syncPath}}" mode="widthFix" style="width:100%; margin-top:10px;"/>
+  <image class="result-img" src="{{syncPath}}" mode="widthFix"/>
+<image class="result-img" src="{{asyncPath}}" mode="widthFix"/>
+
   <button bindtap="saveSync">保存同步谱</button>
 </view>
 

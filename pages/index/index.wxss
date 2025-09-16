@@ -52,7 +52,9 @@
 
 /* 图片自适应：宽度铺满容器，同时限制最大高度，保持比例 */
 .result-img {
-  width: 100%;
+  width: 90%;
+  margin: 20rpx auto;
+  display: block;
   max-height: 60vh;    /* 竖屏时不至于过高；想更大可调到 70vh */
   object-fit: contain; /* 保持比例，不拉伸 */
   border-radius: 12rpx;

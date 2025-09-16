@@ -65,15 +65,36 @@ Page({
           }
 
           // base64 → 本地文件
-          const fs = wx.getFileSystemManager();
-          const base = wx.env.USER_DATA_PATH;
-          const syncPath  = `${base}/sync_2dcos.png`;
-          const asyncPath = `${base}/async_2dcos.png`;
-          fs.writeFileSync(syncPath,  data.sync_png,  "base64");
-          fs.writeFileSync(asyncPath, data.async_png, "base64");
+          // base64 → 本地文件（带清洗 + 防缓存）
+const fs   = wx.getFileSystemManager();
+const base = wx.env.USER_DATA_PATH;
 
-          this.setData({ syncPath, asyncPath });
-          wx.showToast({ title: "分析完成", icon: "success" });
+// 1) 防缓存：每次用新文件名
+const ts = Date.now();
+const syncPath  = `${base}/sync_2dcos_${ts}.png`;
+const asyncPath = `${base}/async_2dcos_${ts}.png`;
+
+// 2) 打印头部，确认是不是 PNG 的 base64（通常以 iVBORw0K 开头）
+console.log("sync b64 head:",  (data.sync_png  || "").slice(0, 30));
+console.log("async b64 head:", (data.async_png || "").slice(0, 30));
+
+// 3) 清掉可能的 dataURL 前缀
+const cleanSync  = (data.sync_png  || "").replace(/^data:image\/\w+;base64,/, "");
+const cleanAsync = (data.async_png || "").replace(/^data:image\/\w+;base64,/, "");
+
+// 4) 写入文件（第三个参数必须是 "base64"）
+fs.writeFileSync(syncPath,  cleanSync,  "base64");
+fs.writeFileSync(asyncPath, cleanAsync, "base64");
+
+// 5) 设置到页面，带 query 防止 <image> 读缓存
+that.setData({
+  syncPath:  `${syncPath}?t=${ts}`,
+  asyncPath: `${asyncPath}?t=${ts}`
+});
+
+console.log("syncPath:", that.data.syncPath);
+console.log("asyncPath:", that.data.asyncPath);
+
 
           // 下一帧滚动到结果区（WXML 里给同步卡片加 id="syncCard"）
           wx.nextTick(() => {
