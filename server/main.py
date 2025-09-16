@@ -8,6 +8,10 @@ from scipy.ndimage import gaussian_filter
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import matplotlib
+matplotlib.rcParams['font.sans-serif'] = ['SimHei', 'NotoSansSC', 'Arial Unicode MS']
+matplotlib.rcParams['axes.unicode_minus'] = False
+
 
 cmap = LinearSegmentedColormap.from_list(
     "GreenWhiteRed", ["#005700","#66cc66","#ffffff","#ff9999","#7f0000"], N=256

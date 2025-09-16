@@ -1,123 +1,129 @@
-import { API_BASE } from "../../config"
+const { baseURL } = require("../../config.js");
 
 Page({
   data: {
-    header_row: 1,       // 表头行索引
-    use_std: false,      // 是否使用相关系数
-    sigma: 0,            // 高斯平滑参数
-    filePath: "",        // Excel 临时路径
-    fileName: "未选择文件",
-    loading: false,      // 是否加载中
-    syncPath: "",        // 同步谱图像路径
-    asyncPath: ""        // 异步谱图像路径
+    tempFilePath: "",
+    fileName: "",
+    header_row: 1,
+    use_std: false,
+    sigma: 0,
+    loading: false,
+    syncPath: "",
+    asyncPath: ""
   },
 
   // 选择文件
-  chooseFile() {
+  pickFile() {
     wx.chooseMessageFile({
       count: 1,
       type: "file",
-      extension: [".xlsx"],
+      extension: ["xlsx"], // 不需要点号
       success: (res) => {
-        const file = res.tempFiles[0]
+        const f = res.tempFiles[0];
         this.setData({
-          filePath: file.path,
-          fileName: file.name
-        })
-      }
-    })
+          tempFilePath: f.path,
+          fileName: f.name || "已选择文件"
+        });
+      },
+      fail: () => wx.showToast({ title: "选择失败", icon: "none" })
+    });
   },
 
-  // 输入框绑定
-  onHeader(e) {
-    this.setData({ header_row: Number(e.detail.value || 0) })
-  },
+  // 参数变化
+  onHeaderRow(e) { this.setData({ header_row: Number(e.detail.value || 1) }); },
+  onUseStd(e)     { this.setData({ use_std: e.detail.value }); },
+  onSigma(e)      { this.setData({ sigma: Number(e.detail.value || 0) }); },
 
-  onStd(e) {
-    this.setData({ use_std: e.detail.value })
-  },
-
-  onSigma(e) {
-    this.setData({ sigma: Number(e.detail.value) })
-  },
-
-  // 上传并分析
-  submit() {
-    if (!this.data.filePath) {
-      wx.showToast({ title: "请先选择 .xlsx 文件", icon: "none" })
-      return
+  // 开始分析
+  startAnalyze() {
+    const { tempFilePath, header_row, use_std, sigma } = this.data;
+    if (!tempFilePath) {
+      wx.showToast({ title: "请先选择文件", icon: "none" });
+      return;
     }
 
-    this.setData({ loading: true, syncPath: "", asyncPath: "" })
+    this.setData({ loading: true, syncPath: "", asyncPath: "" });
+    wx.showLoading({ title: "分析中…" });
 
     wx.uploadFile({
-      url: `${API_BASE}/analyze`,
-      filePath: this.data.filePath,
+      url: `${baseURL}/analyze`,
+      filePath: tempFilePath,
       name: "file",
+      // ！！必须用字符串
       formData: {
-        header_row: String(this.data.header_row),
-        use_std: String(this.data.use_std),
-        sigma: String(this.data.sigma)
+        header_row: String(header_row),
+        use_std: use_std ? "true" : "false",
+        sigma: String(sigma)
       },
-      timeout: 600000,  // 超时时间
+      timeout: 600000, // 10 分钟，大文件更稳
       success: (resp) => {
         try {
-          const data = JSON.parse(resp.data)
-
+          const data = JSON.parse(resp.data || "{}");
           if (data.error) {
-            wx.showModal({ title: "出错了", content: data.error, showCancel: false })
-            return
+            wx.showModal({ title: "分析出错", content: data.error, showCancel: false });
+            return;
           }
 
-          const fs = wx.getFileSystemManager()
-          const base = wx.env.USER_DATA_PATH
-          const syncPath = `${base}/sync_2dcos.png`
-          const asyncPath = `${base}/async_2dcos.png`
+          // base64 → 本地文件
+          const fs = wx.getFileSystemManager();
+          const base = wx.env.USER_DATA_PATH;
+          const syncPath  = `${base}/sync_2dcos.png`;
+          const asyncPath = `${base}/async_2dcos.png`;
+          fs.writeFileSync(syncPath,  data.sync_png,  "base64");
+          fs.writeFileSync(asyncPath, data.async_png, "base64");
 
-          fs.writeFileSync(syncPath, data.sync_png, "base64")
-          fs.writeFileSync(asyncPath, data.async_png, "base64")
+          this.setData({ syncPath, asyncPath });
+          wx.showToast({ title: "分析完成", icon: "success" });
 
-          this.setData({ syncPath, asyncPath })
-
-          if (data.tags && data.tags.length) {
-            wx.showToast({ title: `检测到 ${data.tags.length} 组标签`, icon: "none" })
-          }
+          // 下一帧滚动到结果区（WXML 里给同步卡片加 id="syncCard"）
+          wx.nextTick(() => {
+            wx.pageScrollTo({ selector: '#syncCard', duration: 300 });
+          });
         } catch (e) {
-          wx.showModal({ title: "解析失败", content: String(e), showCancel: false })
+          console.error(e);
+          wx.showModal({ title: "解析失败", content: String(e), showCancel: false });
         }
       },
       fail: (e) => {
-        wx.showModal({ title: "网络错误", content: String(e.errMsg || e), showCancel: false })
+        console.error(e);
+        wx.showModal({
+          title: "网络错误",
+          content: e.errMsg || "请检查服务器域名白名单或网络",
+          showCancel: false
+        });
       },
       complete: () => {
-        this.setData({ loading: false })
+        this.setData({ loading: false });
+        wx.hideLoading();
       }
-    })
+    });
   },
 
-  // 保存图像
-  saveSync() {
-    this.saveImage(this.data.syncPath)
-  },
-
-  saveAsync() {
-    this.saveImage(this.data.asyncPath)
-  },
+  // 保存图片（带权限处理）
+  saveSync()  { this.saveImage(this.data.syncPath);  },
+  saveAsync() { this.saveImage(this.data.asyncPath); },
 
   saveImage(path) {
-    if (!path) return
+    if (!path) return;
     wx.saveImageToPhotosAlbum({
       filePath: path,
-      success: () => {
-        wx.showToast({ title: "已保存到相册" })
-      },
-      fail: (e) => {
-        wx.showModal({
-          title: "保存失败",
-          content: e.errMsg || "请在设置中允许保存到相册",
-          showCancel: false
-        })
+      success: () => wx.showToast({ title: "已保存到相册", icon: "success" }),
+      fail: (err) => {
+        // 首次拒绝或系统限制时，引导去设置
+        if (err && err.errMsg && err.errMsg.includes("auth deny")) {
+          wx.showModal({
+            title: "需要授权",
+            content: "请允许保存到相册权限后重试",
+            success: (res) => {
+              if (res.confirm) {
+                wx.openSetting({});
+              }
+            }
+          });
+        } else {
+          wx.showToast({ title: "保存失败", icon: "none" });
+        }
       }
-    })
+    });
   }
-})
+});

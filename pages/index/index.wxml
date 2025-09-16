@@ -1,45 +1,44 @@
-<!--index.wxml-->
-<navigation-bar title="Weixin" back="{{false}}" color="black" background="#FFF"></navigation-bar>
-<scroll-view class="scrollarea" scroll-y type="list">
-  <view class="container">
-    Weixin
-  </view>
-</scroll-view>
 <view class="container">
-<view class="card">
-<view class="title">上传 Excel（.xlsx）</view>
-<button bindtap="chooseFile">选择文件</button>
-<view class="filename">{{fileName}}</view>
+
+<!-- 文件选择与参数设置 -->
+<view class="section">
+  <button type="default" bindtap="pickFile">选择 Excel 文件</button>
+  <text style="margin-left:10px;">{{fileName}}</text>
 </view>
 
-
-<view class="card">
-<view class="row">
-<text>表头行索引（波长正上方）</text>
-<input type="number" value="{{header_row}}" bindinput="onHeader" />
-</view>
-<view class="row">
-<text>使用相关系数（Z‑score）</text>
-<switch checked="{{use_std}}" bindchange="onStd" />
-</view>
-<view class="row">
-<text>高斯平滑 σ：{{sigma}}</text>
-<slider min="0" max="5" step="1" value="{{sigma}}" bindchange="onSigma" />
-</view>
-<button type="primary" loading="{{loading}}" bindtap="submit">开始分析</button>
+<view class="section">
+  <text>表头行索引：</text>
+  <input type="number" value="{{header_row}}" bindinput="onHeaderRow" style="border:1px solid #ccc; width:100px;"/>
 </view>
 
-
-<view wx:if="{{syncPath}}" class="card">
-<view class="title">同步二维相关光谱</view>
-<image src="{{syncPath}}" mode="widthFix" />
-<button bindtap="saveSync">保存到相册</button>
+<view class="section">
+  <text>使用相关系数(Z-score)：</text>
+  <switch checked="{{use_std}}" bindchange="onUseStd"/>
 </view>
 
-
-<view wx:if="{{asyncPath}}" class="card">
-<view class="title">异步二维相关光谱</view>
-<image src="{{asyncPath}}" mode="widthFix" />
-<button bindtap="saveAsync">保存到相册</button>
+<view class="section">
+  <text>高斯平滑 σ：</text>
+  <slider min="0" max="5" step="1" show-value value="{{sigma}}" bindchange="onSigma"/>
 </view>
+
+<!-- 提交按钮 -->
+<view class="section">
+  <button type="primary" bindtap="startAnalyze" loading="{{loading}}" disabled="{{!tempFilePath}}">
+    开始分析
+  </button>
+</view>
+
+<!-- 分析结果展示 -->
+<view wx:if="{{syncPath}}" class="section">
+  <text>同步二维相关光谱</text>
+  <image src="{{syncPath}}" mode="widthFix" style="width:100%; margin-top:10px;"/>
+  <button bindtap="saveSync">保存同步谱</button>
+</view>
+
+<view wx:if="{{asyncPath}}" class="section">
+  <text>异步二维相关光谱</text>
+  <image src="{{asyncPath}}" mode="widthFix" style="width:100%; margin-top:10px;"/>
+  <button bindtap="saveAsync">保存异步谱</button>
+</view>
+
 </view>
