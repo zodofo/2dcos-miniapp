@@ -1,0 +1,16 @@
+/**index.wxss**/
+page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.scrollarea {
+  flex: 1;
+  overflow-y: hidden;
+}
+.container { padding: 16rpx; }
+.card { background: #fff; border-radius: 16rpx; padding: 24rpx; margin-bottom: 24rpx; box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.06); }
+.title { font-weight: 600; font-size: 32rpx; margin-bottom: 16rpx; }
+.row { display: flex; align-items: center; justify-content: space-between; margin: 12rpx 0; }
+.filename { color: #888; margin-top: 8rpx; }
+image { width: 100%; border-radius: 12rpx; }

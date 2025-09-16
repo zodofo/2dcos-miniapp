@@ -1,0 +1,45 @@
+<!--index.wxml-->
+<navigation-bar title="Weixin" back="{{false}}" color="black" background="#FFF"></navigation-bar>
+<scroll-view class="scrollarea" scroll-y type="list">
+  <view class="container">
+    Weixin
+  </view>
+</scroll-view>
+<view class="container">
+<view class="card">
+<view class="title">上传 Excel（.xlsx）</view>
+<button bindtap="chooseFile">选择文件</button>
+<view class="filename">{{fileName}}</view>
+</view>
+
+
+<view class="card">
+<view class="row">
+<text>表头行索引（波长正上方）</text>
+<input type="number" value="{{header_row}}" bindinput="onHeader" />
+</view>
+<view class="row">
+<text>使用相关系数（Z‑score）</text>
+<switch checked="{{use_std}}" bindchange="onStd" />
+</view>
+<view class="row">
+<text>高斯平滑 σ：{{sigma}}</text>
+<slider min="0" max="5" step="1" value="{{sigma}}" bindchange="onSigma" />
+</view>
+<button type="primary" loading="{{loading}}" bindtap="submit">开始分析</button>
+</view>
+
+
+<view wx:if="{{syncPath}}" class="card">
+<view class="title">同步二维相关光谱</view>
+<image src="{{syncPath}}" mode="widthFix" />
+<button bindtap="saveSync">保存到相册</button>
+</view>
+
+
+<view wx:if="{{asyncPath}}" class="card">
+<view class="title">异步二维相关光谱</view>
+<image src="{{asyncPath}}" mode="widthFix" />
+<button bindtap="saveAsync">保存到相册</button>
+</view>
+</view>
