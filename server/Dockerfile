@@ -1,9 +1,4 @@
-FROM python:3.11-slim
-
-# 预装构建依赖（scipy等需要）
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential gfortran libatlas-base-dev liblapack-dev libblas-dev \
-    && rm -rf /var/lib/apt/lists/*
+FROM python:3.11
 
 WORKDIR /app
 COPY requirements.txt ./
