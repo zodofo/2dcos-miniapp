@@ -9,6 +9,10 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import matplotlib
+import base64
+print("DEBUG: sync_png head =", base64.b64encode(sync_png)[:60], flush=True)
+print("DEBUG: async_png head =", base64.b64encode(async_png)[:60], flush=True)
+
 matplotlib.rcParams['font.sans-serif'] = ['SimHei', 'NotoSansSC', 'Arial Unicode MS']
 matplotlib.rcParams['axes.unicode_minus'] = False
 
